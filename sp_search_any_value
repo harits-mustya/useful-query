@@ -1,0 +1,102 @@
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author		: Harits
+-- Create date	: 2023-04-06
+-- Description	: Search Any Value
+-- Modified By	: -, -
+-- Description	: New
+-- Modified By	: -, -
+-- Description	: New
+-- =============================================
+
+CREATE PROCEDURE dbo.search_any_value @SearchStr VARCHAR(max)
+AS
+
+SET NOCOUNT ON
+ 
+    CREATE TABLE #Results (ColumnName nvarchar(370), ColumnValue nvarchar(3630))
+    SET NOCOUNT ON
+ 
+    DECLARE @TableName nvarchar(256), @ColumnName nvarchar(128), @SearchStr2 nvarchar(110)
+    SET  @TableName = ''
+    SET @SearchStr2 = QUOTENAME('%' + @SearchStr + '%','''')
+ 
+    WHILE @TableName IS NOT NULL
+     
+    BEGIN
+        SET @ColumnName = ''
+        SET @TableName =
+        (
+            SELECT MIN(QUOTENAME(TABLCREATE PROCEDURE dbo.search_content_value 
+    @SearchStr VARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Create a temporary table to store results
+    CREATE TABLE #Results (
+        ColumnName NVARCHAR(370),
+        ColumnValue NVARCHAR(3630)
+    );
+
+    -- Prepare variables
+    DECLARE @TableName NVARCHAR(256), 
+            @ColumnName NVARCHAR(128), 
+            @SQL NVARCHAR(MAX),
+            @SearchStr2 NVARCHAR(110);
+
+    SET @SearchStr2 = QUOTENAME('%' + @SearchStr + '%', '''');
+
+    -- Collect all table and column names upfront
+    DECLARE @TableColumns TABLE (
+        TableName NVARCHAR(256),
+        ColumnName NVARCHAR(128)
+    );
+
+    INSERT INTO @TableColumns (TableName, ColumnName)
+    SELECT 
+        QUOTENAME(TABLE_SCHEMA) + '.' + QUOTENAME(TABLE_NAME) AS TableName,
+        QUOTENAME(COLUMN_NAME) AS ColumnName
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE DATA_TYPE IN ('char', 'varchar', 'nchar', 'nvarchar', 'int', 'decimal')
+        AND OBJECTPROPERTY(OBJECT_ID(QUOTENAME(TABLE_SCHEMA) + '.' + QUOTENAME(TABLE_NAME)), 'IsMSShipped') = 0;
+
+    -- Loop through the collected tables and columns
+    DECLARE Cursor_Tables CURSOR FOR 
+        SELECT TableName, ColumnName 
+        FROM @TableColumns;
+
+    OPEN Cursor_Tables;
+
+    FETCH NEXT FROM Cursor_Tables INTO @TableName, @ColumnName;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        SET @SQL = 'INSERT INTO #Results (ColumnName, ColumnValue) ' +
+                   'SELECT ''' + @TableName + '.' + @ColumnName + ''', LEFT(CONVERT(NVARCHAR(MAX), ' + @ColumnName + '), 3630) ' +
+                   'FROM ' + @TableName + ' (NOLOCK) ' +
+                   'WHERE ' + @ColumnName + ' LIKE ' + @SearchStr2;
+
+        BEGIN TRY
+            EXEC sp_executesql @SQL;
+        END TRY
+        BEGIN CATCH
+            -- Optionally, handle errors here (log or suppress specific errors)
+        END CATCH;
+
+        FETCH NEXT FROM Cursor_Tables INTO @TableName, @ColumnName;
+    END;
+
+    CLOSE Cursor_Tables;
+    DEALLOCATE Cursor_Tables;
+
+    -- Return results
+    SELECT ColumnName, ColumnValue FROM #Results;
+
+    -- Cleanup
+    DROP TABLE #Results;
+END;
