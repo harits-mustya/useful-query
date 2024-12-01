@@ -1,0 +1,15 @@
+-- =============================================
+-- Author : Harits
+-- Create date: <24-01-2019>
+-- Description:	<Search any VALUE that contain on certain SP>
+-- =============================================
+create PROCEDURE [dbo].[Search_Content_SP]
+	@text varchar(max)
+AS
+BEGIN
+
+	SELECT name
+	FROM   sys.procedures
+	WHERE  Object_definition(object_id) LIKE '%'+@text+'%'
+
+END
